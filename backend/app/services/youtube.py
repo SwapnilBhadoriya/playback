@@ -21,15 +21,20 @@ _cookies_file: str | None = None
 
 def _base_ydl_opts() -> dict:
     """Options shared by every yt-dlp call to work around YouTube blocking datacenter IPs
-    (the "Sign in to confirm you're not a bot" error most cloud hosts hit) by authenticating
-    as a real logged-in session via cookies, configured through the optional YT_DLP_COOKIES
-    env var. (Forcing an alternate player_client was tried and rejected -- confirmed live that
-    it silently degrades YouTube's format list to a single muxed video+audio stream instead of
-    the proper audio-only DASH formats, which would blow past Groq's 25MB upload cap on
-    anything but very short videos. Cookies are the only fix that doesn't have that downside.)
+    (the "Sign in to confirm you're not a bot" error most cloud hosts hit).
+
+    Cookies from a real logged-in session (optional YT_DLP_COOKIES env var) were tried alone
+    first and confirmed reaching the process correctly, but YouTube still rejected the request
+    from Railway's IP -- cookies alone aren't sufficient here. The "android" player_client was
+    also tried and rejected: it silently degrades YouTube's format list to a single muxed
+    video+audio stream instead of proper audio-only DASH formats, risking Groq's 25MB cap.
+    "tv_embedded" is different -- confirmed live it returns the *same* full audio-only format
+    catalog as the default client (no degradation), and is a distinct auth context (built for
+    embedded TV apps) that's sometimes not subject to the same bot-check as the "web" client.
+    Combined with cookies as a second layer in case tv_embedded alone isn't enough either.
     """
     global _cookies_file
-    opts = {}
+    opts = {"extractor_args": {"youtube": {"player_client": ["tv_embedded"]}}}
     if settings.yt_dlp_cookies:
         if _cookies_file is None:
             fd, path = tempfile.mkstemp(prefix="yt_cookies_", suffix=".txt")
