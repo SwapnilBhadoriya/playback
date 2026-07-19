@@ -23,26 +23,32 @@ def _base_ydl_opts() -> dict:
     """Options shared by every yt-dlp call to work around YouTube blocking datacenter IPs
     (the "Sign in to confirm you're not a bot" error most cloud hosts hit).
 
-    Cookies from a real logged-in session (optional YT_DLP_COOKIES env var) were tried alone
-    first and confirmed reaching the process correctly, but YouTube still rejected the request
-    from Railway's IP -- cookies alone aren't sufficient here. The "android" player_client was
-    also tried and rejected: it silently degrades YouTube's format list to a single muxed
-    video+audio stream instead of proper audio-only DASH formats, risking Groq's 25MB cap.
-    "tv_embedded" is different -- confirmed live it returns the *same* full audio-only format
-    catalog as the default client (no degradation), and is a distinct auth context (built for
-    embedded TV apps) that's sometimes not subject to the same bot-check as the "web" client.
+    Correction from an earlier version of this function: "tv_embedded" is NOT a valid
+    player_client in the installed yt-dlp version -- confirmed live yt-dlp logs
+    "Skipping unsupported client 'tv_embedded'" and silently falls back to the default ("web")
+    client. Every earlier test result attributed to "tv_embedded" was actually just testing
+    default behavior. The real, current client with an equivalent purpose is "tv_simply": it
+    doesn't send cookies (no login needed) and explicitly *requires* a PO (proof-of-origin)
+    token for its media (GVS) formats -- confirmed live this actually engages a PO token
+    provider (unlike "web", whose player-info-stage bot-check isn't gated behind any PO token
+    yt-dlp knows to request, which is why cookies alone never helped: yt-dlp had no reason to
+    ask bgutil-provider for anything).
 
-    Cookies alone weren't sufficient on Railway either (confirmed reaching the process intact,
-    still blocked), so the next layer is a PO (proof-of-origin) token, supplied by a separate
-    bgutil-ytdlp-pot-provider server (optional POT_PROVIDER_BASE_URL env var) -- see
-    https://github.com/Brainicism/bgutil-ytdlp-pot-provider. All three layers are combined
-    since they're independent and don't conflict.
+    Three things confirmed necessary together for "tv_simply" to yield real audio-only formats
+    (without them it silently degrades to image-only "formats"):
+    1. player_client=tv_simply (this function)
+    2. A running bgutil-ytdlp-pot-provider server for the actual PO token (POT_PROVIDER_BASE_URL)
+    3. A JS runtime (Deno) plus yt-dlp's remote EJS challenge-solver component, to solve
+       YouTube's "n challenge" signature obfuscation -- see download_audio's remote_components.
+
+    Cookies (optional YT_DLP_COOKIES) are kept as a harmless fallback -- unused by tv_simply
+    itself, but cost nothing to keep in case a future client change benefits from them again.
     """
     global _cookies_file
-    extractor_args = {"youtube": {"player_client": ["tv_embedded"]}}
+    extractor_args = {"youtube": {"player_client": ["tv_simply"]}}
     if settings.pot_provider_base_url:
         extractor_args["youtubepot-bgutilhttp"] = {"base_url": [settings.pot_provider_base_url]}
-    opts = {"extractor_args": extractor_args}
+    opts = {"extractor_args": extractor_args, "remote_components": {"ejs:github"}}
     if settings.yt_dlp_cookies:
         if _cookies_file is None:
             fd, path = tempfile.mkstemp(prefix="yt_cookies_", suffix=".txt")
@@ -119,7 +125,15 @@ def download_audio(
         "noplaylist": True,
         # m4a/webm are Groq's transcription API's natively supported containers for
         # YouTube's audio-only streams, so no ffmpeg extraction/conversion is needed.
-        "format": "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best",
+        # Capped at 128kbps first: "bestaudio" alone picks the highest-bitrate stream
+        # available, which for some videos is 250-400kbps -- plenty for speech transcription
+        # accuracy at 128kbps, and confirmed live that an uncapped choice can exceed Groq's
+        # 25MB cap well before a video gets particularly long. Falls back to whatever's
+        # available if nothing fits under the cap.
+        "format": (
+            "bestaudio[ext=m4a][abr<=128]/bestaudio[ext=webm][abr<=128]/"
+            "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best"
+        ),
         "outtmpl": os.path.join(tmp_dir, "%(id)s.%(ext)s"),
         "progress_hooks": [_progress_hook],
         **_base_ydl_opts(),
