@@ -9,7 +9,7 @@ from app.config import settings
 _llm = init_chat_model(
     model=settings.llm_model_name,
     model_provider=settings.llm_provider,
-    api_key=settings.google_api_key,
+    api_key=settings.groq_api_key,
 )
 
 

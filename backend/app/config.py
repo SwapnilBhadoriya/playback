@@ -6,12 +6,11 @@ class Settings(BaseSettings):
 
     database_url: str
     redis_url: str
-    google_api_key: str
+    groq_api_key: str
     cors_origin: str
-    whisper_model_size: str = "base"
-    whisper_cpu_threads: int = 4
-    llm_provider: str = "google_genai"
-    llm_model_name: str = "gemini-flash-latest"
+    groq_whisper_model: str = "whisper-large-v3-turbo"
+    llm_provider: str = "groq"
+    llm_model_name: str = "llama-3.3-70b-versatile"
 
 
 settings = Settings()

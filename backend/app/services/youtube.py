@@ -39,12 +39,10 @@ def fetch_metadata(url: str) -> dict:
 def download_audio(
     url: str, on_progress: Callable[[int], None] | None = None
 ) -> tuple[str, str]:
-    """Downloads and extracts audio for a YouTube URL. Returns (audio_path, tmp_dir).
+    """Downloads audio for a YouTube URL. Returns (audio_path, tmp_dir).
 
     The caller is responsible for removing tmp_dir once done with the audio file.
     If on_progress is given, it's called with an integer 0-100 as the download advances.
-    The post-download ffmpeg extraction step has no granular progress of its own, so
-    on_progress(100) only fires once the whole download+extraction finished.
     """
     tmp_dir = tempfile.mkdtemp(prefix="playback_audio_")
 
@@ -61,22 +59,16 @@ def download_audio(
         "quiet": True,
         "no_warnings": True,
         "noplaylist": True,
-        "format": "bestaudio/best",
+        # m4a/webm are Groq's transcription API's natively supported containers for
+        # YouTube's audio-only streams, so no ffmpeg extraction/conversion is needed.
+        "format": "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best",
         "outtmpl": os.path.join(tmp_dir, "%(id)s.%(ext)s"),
-        "postprocessors": [
-            {
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": "mp3",
-                "preferredquality": "192",
-            }
-        ],
         "progress_hooks": [_progress_hook],
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            base, _ = os.path.splitext(ydl.prepare_filename(info))
     except yt_dlp.utils.DownloadError as e:
         shutil.rmtree(tmp_dir, ignore_errors=True)
         raise VideoUnavailableError(str(e)) from e
@@ -84,4 +76,4 @@ def download_audio(
     if on_progress is not None:
         on_progress(100)
 
-    return f"{base}.mp3", tmp_dir
+    return ydl.prepare_filename(info), tmp_dir

@@ -27,11 +27,11 @@ src/
 ├── index.css          # Tailwind entry point (@import "tailwindcss";)
 ├── api/
 │   ├── client.ts       # Typed fetch wrapper (base URL, JSON, error handling)
-│   └── videos.ts       # createVideo, getVideoStatus, getVideoNotes, getPracticeSheet
+│   └── videos.ts       # createVideo, getVideoMetadata, getVideoStatus, videoStatusStreamUrl, getVideoNotes, getPracticeSheet
 ├── types/
 │   └── video.ts        # TypeScript types matching the backend's response schemas
 ├── hooks/
-│   └── useVideoStatus.ts  # Polls GET /videos/{id}/status until done/failed
+│   └── useVideoStatus.ts  # Subscribes to the SSE status stream until done/failed
 ├── pages/
 │   ├── HomePage.tsx    # "/" — URL submission form
 │   └── VideoPage.tsx   # "/videos/:videoId" — status, then notes + practice sheet
@@ -48,7 +48,7 @@ src/
 
 - **Vite + React + TypeScript** — build tooling and UI framework
 - **Tailwind CSS v4** (via the `@tailwindcss/vite` plugin) — styling
-- **TanStack Query** — all API data fetching; `useVideoStatus` uses its dynamic `refetchInterval` to poll every 2s until the job reaches `done`/`failed`, then stops automatically
+- **TanStack Query** — all API data fetching and caching; `useVideoStatus` opens a Server-Sent Events connection (`EventSource`) to the backend's status stream and writes each update straight into the query cache, closing once the job reaches `done`/`failed`
 - **React Router** — `/` (submit) and `/videos/:videoId` (results)
 
 ## Commands
