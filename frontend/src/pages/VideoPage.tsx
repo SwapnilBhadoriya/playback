@@ -77,7 +77,11 @@ export function VideoPage() {
   }
 
   if (!isDone || !currentStage) {
-    return <ProcessingStatus steps={mapStageToProcessingSteps(currentStage ?? "queued")} />;
+    return (
+      <ProcessingStatus
+        steps={mapStageToProcessingSteps(currentStage ?? "queued", statusQuery.data?.progress_percent)}
+      />
+    );
   }
 
   const metadata = metadataQuery.data!;

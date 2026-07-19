@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from faster_whisper import WhisperModel
 
 from app.config import settings
@@ -17,7 +19,17 @@ def _get_model() -> WhisperModel:
     return _model
 
 
-def transcribe(audio_path: str) -> list[dict]:
+def transcribe(audio_path: str, on_progress: Callable[[int], None] | None = None) -> list[dict]:
     model = _get_model()
-    segments, _info = model.transcribe(audio_path)
-    return [{"start": s.start, "end": s.end, "text": s.text} for s in segments]
+    segments, info = model.transcribe(audio_path)
+
+    result = []
+    for segment in segments:
+        result.append({"start": segment.start, "end": segment.end, "text": segment.text})
+        if on_progress is not None and info.duration:
+            on_progress(min(99, int(segment.end / info.duration * 100)))
+
+    if on_progress is not None:
+        on_progress(100)
+
+    return result

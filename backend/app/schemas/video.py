@@ -27,6 +27,7 @@ class VideoResponse(BaseModel):
 class JobStatusResponse(BaseModel):
     current_stage: str
     error_message: str | None
+    progress_percent: int | None = None
 
 
 class NoteResponse(BaseModel):

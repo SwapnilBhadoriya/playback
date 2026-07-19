@@ -25,6 +25,7 @@ export type PipelineStage =
 export interface JobStatus {
   current_stage: PipelineStage;
   error_message: string | null;
+  progress_percent: number | null;
 }
 
 // Raw block shape as returned by the backend -- unlike the frontend's rich

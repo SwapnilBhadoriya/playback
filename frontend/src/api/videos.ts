@@ -7,6 +7,10 @@ import type {
   VideoMetadataResponse,
 } from "../types/video";
 
+export function listVideos(): Promise<VideoMetadataResponse[]> {
+  return apiFetch<VideoMetadataResponse[]>("/videos");
+}
+
 export function createVideo(youtubeUrl: string): Promise<VideoCreateResponse> {
   return apiFetch<VideoCreateResponse>("/videos", {
     method: "POST",

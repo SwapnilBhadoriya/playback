@@ -1,4 +1,5 @@
 import shutil
+import time
 import uuid
 
 from app.database import SessionLocal
@@ -8,6 +9,28 @@ from app.services.llm import generate_notes, generate_practice_questions
 from app.services.transcription import transcribe
 from app.services.youtube import download_audio
 from app.tasks.celery_app import celery_app
+
+# Minimum time between progress writes for a single stage, so a fast stream of
+# tiny percentage ticks (e.g. per-segment transcription updates) doesn't flood
+# the DB with commits or Redis with publishes.
+PROGRESS_UPDATE_MIN_INTERVAL_SECONDS = 0.5
+
+
+def _make_progress_reporter(db, job: "Job", video_id: str, stage: str):
+    last_reported_at = 0.0
+
+    def report(percent: int) -> None:
+        nonlocal last_reported_at
+        now = time.monotonic()
+        is_final = percent >= 100
+        if not is_final and (now - last_reported_at) < PROGRESS_UPDATE_MIN_INTERVAL_SECONDS:
+            return
+        last_reported_at = now
+        job.progress_percent = percent
+        db.commit()
+        publish_status(video_id, stage, progress_percent=percent)
+
+    return report
 
 
 @celery_app.task(name="process_video")
@@ -21,18 +44,27 @@ def process_video(video_id: str):
 
         try:
             job.current_stage = "extracting_audio"
+            job.progress_percent = 0
             db.commit()
-            publish_status(video_id, job.current_stage)
-            audio_path, tmp_dir = download_audio(video.youtube_url)
+            publish_status(video_id, job.current_stage, progress_percent=0)
+            audio_path, tmp_dir = download_audio(
+                video.youtube_url,
+                on_progress=_make_progress_reporter(db, job, video_id, "extracting_audio"),
+            )
 
             job.current_stage = "transcribing"
+            job.progress_percent = 0
             db.commit()
-            publish_status(video_id, job.current_stage)
-            segments = transcribe(audio_path)
+            publish_status(video_id, job.current_stage, progress_percent=0)
+            segments = transcribe(
+                audio_path,
+                on_progress=_make_progress_reporter(db, job, video_id, "transcribing"),
+            )
             db.add(Transcript(video_id=vid, segments=segments))
             db.commit()
 
             job.current_stage = "generating_notes"
+            job.progress_percent = None
             db.commit()
             publish_status(video_id, job.current_stage)
             notes = generate_notes(segments)

@@ -10,6 +10,10 @@ export interface ProcessingStepState {
   id: ProcessingStepId;
   label: string;
   status: ProcessingStepStatus;
+  // Only meaningful while status is "active", and only populated by the backend
+  // for extracting_audio/transcribing (the two stages with a natural progress
+  // signal). Absent/undefined elsewhere.
+  progressPercent?: number;
 }
 
 // Reconciled with PipelineStage (src/types/video.ts) in lib/mapStageToProcessingSteps.ts.

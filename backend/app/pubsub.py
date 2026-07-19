@@ -13,8 +13,19 @@ def _channel_name(video_id: str) -> str:
     return f"video-status:{video_id}"
 
 
-def publish_status(video_id: str, current_stage: str, error_message: str | None = None) -> None:
-    payload = json.dumps({"current_stage": current_stage, "error_message": error_message})
+def publish_status(
+    video_id: str,
+    current_stage: str,
+    error_message: str | None = None,
+    progress_percent: int | None = None,
+) -> None:
+    payload = json.dumps(
+        {
+            "current_stage": current_stage,
+            "error_message": error_message,
+            "progress_percent": progress_percent,
+        }
+    )
     _sync_client.publish(_channel_name(video_id), payload)
 
 

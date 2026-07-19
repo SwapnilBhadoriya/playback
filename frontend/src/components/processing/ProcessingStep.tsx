@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Check, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 import type { ProcessingStepState } from "@/types/processing";
 
 export interface ProcessingStepProps {
@@ -32,14 +33,26 @@ export function ProcessingStep({ step }: ProcessingStepProps) {
         {step.status === "complete" && <Check className="size-4" />}
         {step.status === "error" && <X className="size-4" />}
       </span>
-      <span
-        className={cn(
-          "text-sm font-medium",
-          step.status === "pending" ? "text-muted-foreground" : "text-foreground",
+      <div className="flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <span
+            className={cn(
+              "text-sm font-medium",
+              step.status === "pending" ? "text-muted-foreground" : "text-foreground",
+            )}
+          >
+            {step.label}
+          </span>
+          {step.status === "active" && step.progressPercent !== undefined && (
+            <span className="text-xs font-semibold tabular-nums text-primary">
+              {step.progressPercent}%
+            </span>
+          )}
+        </div>
+        {step.status === "active" && step.progressPercent !== undefined && (
+          <Progress value={step.progressPercent} className="mt-1.5 h-1" />
         )}
-      >
-        {step.label}
-      </span>
+      </div>
     </motion.div>
   );
 }

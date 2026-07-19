@@ -8,7 +8,10 @@ const STEP_ORDER: { id: ProcessingStepId; label: string; stage: PipelineStage }[
   { id: "generating_questions", label: "Generating questions", stage: "generating_practice_sheet" },
 ];
 
-export function mapStageToProcessingSteps(currentStage: PipelineStage): ProcessingStepState[] {
+export function mapStageToProcessingSteps(
+  currentStage: PipelineStage,
+  progressPercent?: number | null,
+): ProcessingStepState[] {
   if (currentStage === "queued") {
     return STEP_ORDER.map(({ id, label }) => ({ id, label, status: "pending" }));
   }
@@ -33,5 +36,8 @@ export function mapStageToProcessingSteps(currentStage: PipelineStage): Processi
     id,
     label,
     status: idx < currentIdx ? "complete" : idx === currentIdx ? "active" : "pending",
+    // Only extracting_audio/transcribing ever carry a numeric progress from the
+    // backend; other active stages simply have progressPercent left undefined.
+    progressPercent: idx === currentIdx && progressPercent != null ? progressPercent : undefined,
   }));
 }
