@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import shutil
@@ -5,6 +6,8 @@ import tempfile
 from collections.abc import Callable
 
 import yt_dlp
+
+logger = logging.getLogger(__name__)
 
 YOUTUBE_URL_PATTERN = re.compile(
     r"^https?://(www\.|m\.)?"
@@ -26,6 +29,7 @@ def fetch_metadata(url: str) -> dict:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
     except yt_dlp.utils.DownloadError as e:
+        logger.error("fetch_metadata failed for %s: %s", url, e)
         raise VideoUnavailableError(str(e)) from e
 
     return {
@@ -70,6 +74,7 @@ def download_audio(
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
     except yt_dlp.utils.DownloadError as e:
+        logger.error("download_audio failed for %s: %s", url, e)
         shutil.rmtree(tmp_dir, ignore_errors=True)
         raise VideoUnavailableError(str(e)) from e
 
