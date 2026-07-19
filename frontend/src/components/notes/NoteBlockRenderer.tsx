@@ -1,12 +1,16 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ShikiHighlighter } from "react-shiki/web";
 import { KeyPointCard } from "@/components/notes/KeyPointCard";
+import { CodeHighlightBoundary } from "@/components/notes/CodeHighlightBoundary";
 import type { NoteBlock } from "@/types/notes";
+
+const CODE_THEME = { light: "github-light", dark: "github-dark" };
 
 export function NoteBlockRenderer({ block }: { block: NoteBlock }) {
   if (block.type === "paragraph") {
     return (
-      <div className="space-y-2 text-sm leading-relaxed text-foreground [&_code]:rounded [&_code]:bg-secondary [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-xs [&_code]:text-primary [&_li]:ml-4 [&_li]:list-decimal [&_strong]:font-semibold [&_strong]:text-foreground">
+      <div className="prose prose-sm dark:prose-invert max-w-none">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{block.text}</ReactMarkdown>
       </div>
     );
@@ -22,11 +26,19 @@ export function NoteBlockRenderer({ block }: { block: NoteBlock }) {
     );
   }
 
-  return (
+  const plainFallback = (
     <div className="relative rounded-lg border border-border bg-secondary/60 p-3">
       <pre className="overflow-x-auto text-xs text-foreground">
         <code>{block.code}</code>
       </pre>
     </div>
+  );
+
+  return (
+    <CodeHighlightBoundary fallback={plainFallback}>
+      <ShikiHighlighter language={block.language} theme={CODE_THEME} defaultColor={false} className="text-xs">
+        {block.code}
+      </ShikiHighlighter>
+    </CodeHighlightBoundary>
   );
 }

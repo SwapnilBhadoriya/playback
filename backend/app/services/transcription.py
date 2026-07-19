@@ -8,7 +8,12 @@ _model: WhisperModel | None = None
 def _get_model() -> WhisperModel:
     global _model
     if _model is None:
-        _model = WhisperModel(settings.whisper_model_size, device="cpu", compute_type="int8")
+        _model = WhisperModel(
+            settings.whisper_model_size,
+            device="cpu",
+            compute_type="int8",
+            cpu_threads=settings.whisper_cpu_threads,
+        )
     return _model
 
 

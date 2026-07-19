@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
@@ -78,4 +79,20 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Shiki dual-theme code blocks: rendered with defaultColor:false, so it emits
+   --shiki-light/--shiki-dark custom properties per token but no color CSS of its
+   own -- these rules apply them based on the app's existing .dark class, instead
+   of Shiki's default (OS prefers-color-scheme, which wouldn't match this app's
+   manually-toggled theme). */
+.shiki,
+.shiki span {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+}
+.dark .shiki,
+.dark .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
 }

@@ -20,7 +20,7 @@ export function HomePage() {
       <span className="flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
         <Sparkles className="size-6" />
       </span>
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">Video Transcripter</h1>
+      <h1 className="text-3xl font-bold tracking-tight text-foreground">Playback</h1>
       <p className="max-w-xl text-center text-sm text-muted-foreground">
         Paste a YouTube URL to generate structured notes, a searchable timeline, and practice
         questions from the video.

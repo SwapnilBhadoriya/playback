@@ -1,5 +1,11 @@
-import { apiFetch } from "./client";
-import type { JobStatus, Note, PracticeQuestion, VideoCreateResponse } from "../types/video";
+import { apiFetch, BASE_URL } from "./client";
+import type {
+  JobStatus,
+  Note,
+  PracticeQuestion,
+  VideoCreateResponse,
+  VideoMetadataResponse,
+} from "../types/video";
 
 export function createVideo(youtubeUrl: string): Promise<VideoCreateResponse> {
   return apiFetch<VideoCreateResponse>("/videos", {
@@ -8,8 +14,16 @@ export function createVideo(youtubeUrl: string): Promise<VideoCreateResponse> {
   });
 }
 
+export function getVideoMetadata(videoId: string): Promise<VideoMetadataResponse> {
+  return apiFetch<VideoMetadataResponse>(`/videos/${videoId}`);
+}
+
 export function getVideoStatus(videoId: string): Promise<JobStatus> {
   return apiFetch<JobStatus>(`/videos/${videoId}/status`);
+}
+
+export function videoStatusStreamUrl(videoId: string): string {
+  return `${BASE_URL}/videos/${videoId}/status/stream`;
 }
 
 export function getVideoNotes(videoId: string): Promise<Note[]> {

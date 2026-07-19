@@ -12,5 +12,8 @@ export interface ProcessingStepState {
   status: ProcessingStepStatus;
 }
 
-// TODO: reconcile with PipelineStage in src/types/video.ts when wiring the real backend
-export type VideoPageState = "idle" | "processing" | "complete";
+// Reconciled with PipelineStage (src/types/video.ts) in lib/mapStageToProcessingSteps.ts.
+// "error" corresponds to the backend's "failed" stage -- not reachable yet (failure
+// handling isn't implemented in the pipeline), but handled defensively rather than
+// left to hang indefinitely if it ever occurs.
+export type VideoPageState = "loading" | "processing" | "complete" | "error" | "not-found";

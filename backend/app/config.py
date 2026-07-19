@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     google_api_key: str
     cors_origin: str
     whisper_model_size: str = "base"
+    whisper_cpu_threads: int = 4
     llm_provider: str = "google_genai"
     llm_model_name: str = "gemini-flash-latest"
 

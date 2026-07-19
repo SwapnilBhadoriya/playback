@@ -30,6 +30,8 @@ def fetch_metadata(url: str) -> dict:
     return {
         "title": info.get("title"),
         "duration_seconds": info.get("duration"),
+        "youtube_video_id": info.get("id"),
+        "channel_name": info.get("channel") or info.get("uploader"),
     }
 
 

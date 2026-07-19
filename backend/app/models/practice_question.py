@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -19,3 +19,7 @@ class PracticeQuestion(Base):
     options: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     answer: Mapped[str] = mapped_column(Text, nullable=False)
     explanation: Mapped[str] = mapped_column(Text, nullable=False)
+    difficulty: Mapped[str | None] = mapped_column(String, nullable=True)
+    marks: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    topic_tags: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    timestamp_seconds: Mapped[float | None] = mapped_column(Float, nullable=True)

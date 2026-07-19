@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import { Clock, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ConfidenceRing } from "@/components/questions/ConfidenceRing";
 import { cn } from "@/lib/utils";
 import { formatTimestamp } from "@/lib/format";
 import type { PracticeQuestionRich } from "@/types/questions";
@@ -48,10 +47,6 @@ export function QuestionCard({ question, onSeek }: QuestionCardProps) {
         <span className="flex items-center gap-1">
           <Clock className="size-3.5" />
           {formatTimestamp(question.timestampSeconds)}
-        </span>
-        <span className="flex items-center gap-1.5">
-          Confidence {question.confidenceScore}%
-          <ConfidenceRing score={question.confidenceScore} />
         </span>
       </div>
 

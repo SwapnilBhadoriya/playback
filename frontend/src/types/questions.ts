@@ -9,7 +9,10 @@ export interface PracticeQuestionRich {
   explanation: string;
   marks: number;
   difficulty: Difficulty;
-  confidenceScore: number;
+  // Dropped: an LLM self-reporting a calibrated confidence score isn't something
+  // models do reliably, so the backend doesn't produce this. Kept optional rather
+  // than removed in case a real confidence signal is added later.
+  confidenceScore?: number;
   topicTags: string[];
   timestampSeconds: number;
 }

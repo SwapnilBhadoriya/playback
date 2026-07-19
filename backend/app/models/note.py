@@ -1,7 +1,7 @@
 import uuid
 
-from sqlalchemy import Float, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Float, ForeignKey, String
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -15,5 +15,5 @@ class Note(Base):
         UUID(as_uuid=True), ForeignKey("videos.id", ondelete="CASCADE"), nullable=False
     )
     section_title: Mapped[str] = mapped_column(String, nullable=False)
-    content: Mapped[str] = mapped_column(Text, nullable=False)
+    blocks: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     start_timestamp: Mapped[float] = mapped_column(Float, nullable=False)
