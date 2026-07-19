@@ -100,3 +100,10 @@ tests/                 # pytest unit tests
 
 - **`address already in use` on `docker compose up`**: something else on your machine is already bound to the mapped host port (check `ss -tlnp | grep <port>`). This repo intentionally uses `5433` for Postgres for this reason — adjust `docker-compose.yml` and `.env` together if you hit a similar conflict on 6379 (Redis).
 - **Migrations out of sync**: if you pull new model changes, re-run `.venv/bin/alembic upgrade head`. To generate a new migration after changing models: `.venv/bin/alembic revision --autogenerate -m "description"`.
+- **`Video not found, private, or unavailable` on a video that works locally**: this almost always means YouTube is blocking the host's IP with "Sign in to confirm you're not a bot" — check the web service's logs for the actual `yt-dlp` error (logged, but deliberately not sent to the client). Common on cloud hosts (Railway, Render, etc.), rare on a residential/local IP. Fix: set `YT_DLP_COOKIES` to the full contents of a Netscape-format `cookies.txt` exported from a real, logged-in YouTube session:
+  1. Log into YouTube in your browser.
+  2. Export cookies with a browser extension such as "Get cookies.txt LOCALLY" (Chrome/Firefox), scoped to youtube.com.
+  3. Paste the exported file's full contents as the `YT_DLP_COOKIES` env var on your host (as one multi-line value — most dashboards, including Railway's, support multi-line env vars).
+  4. Redeploy. `app/services/youtube.py` writes it to a temp file and passes it to `yt-dlp` as `cookiefile` automatically once the env var is set.
+  
+  Cookies from a real session can eventually expire/rotate — if the error comes back after working for a while, re-export and update the env var.

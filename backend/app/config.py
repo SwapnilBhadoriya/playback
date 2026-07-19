@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     groq_whisper_model: str = "whisper-large-v3-turbo"
     llm_provider: str = "groq"
     llm_model_name: str = "llama-3.3-70b-versatile"
+    # Optional: full contents of a Netscape-format cookies.txt from a logged-in YouTube
+    # session. Needed on hosts (Railway, Render, most clouds) where YouTube's bot-detection
+    # blocks datacenter IPs with "Sign in to confirm you're not a bot" -- unset for local dev.
+    yt_dlp_cookies: str | None = None
 
 
 settings = Settings()

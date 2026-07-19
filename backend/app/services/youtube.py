@@ -7,12 +7,37 @@ from collections.abc import Callable
 
 import yt_dlp
 
+from app.config import settings
+
 logger = logging.getLogger(__name__)
 
 YOUTUBE_URL_PATTERN = re.compile(
     r"^https?://(www\.|m\.)?"
     r"(youtube\.com/(watch\?v=|shorts/|embed/)[\w-]{11}|youtu\.be/[\w-]{11})"
 )
+
+_cookies_file: str | None = None
+
+
+def _base_ydl_opts() -> dict:
+    """Options shared by every yt-dlp call to work around YouTube blocking datacenter IPs
+    (the "Sign in to confirm you're not a bot" error most cloud hosts hit) by authenticating
+    as a real logged-in session via cookies, configured through the optional YT_DLP_COOKIES
+    env var. (Forcing an alternate player_client was tried and rejected -- confirmed live that
+    it silently degrades YouTube's format list to a single muxed video+audio stream instead of
+    the proper audio-only DASH formats, which would blow past Groq's 25MB upload cap on
+    anything but very short videos. Cookies are the only fix that doesn't have that downside.)
+    """
+    global _cookies_file
+    opts = {}
+    if settings.yt_dlp_cookies:
+        if _cookies_file is None:
+            fd, path = tempfile.mkstemp(prefix="yt_cookies_", suffix=".txt")
+            with os.fdopen(fd, "w") as f:
+                f.write(settings.yt_dlp_cookies)
+            _cookies_file = path
+        opts["cookiefile"] = _cookies_file
+    return opts
 
 
 class VideoUnavailableError(Exception):
@@ -24,7 +49,13 @@ def is_valid_youtube_url(url: str) -> bool:
 
 
 def fetch_metadata(url: str) -> dict:
-    ydl_opts = {"quiet": True, "skip_download": True, "no_warnings": True, "noplaylist": True}
+    ydl_opts = {
+        "quiet": True,
+        "skip_download": True,
+        "no_warnings": True,
+        "noplaylist": True,
+        **_base_ydl_opts(),
+    }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -68,6 +99,7 @@ def download_audio(
         "format": "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best",
         "outtmpl": os.path.join(tmp_dir, "%(id)s.%(ext)s"),
         "progress_hooks": [_progress_hook],
+        **_base_ydl_opts(),
     }
 
     try:
