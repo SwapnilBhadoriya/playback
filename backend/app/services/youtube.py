@@ -36,6 +36,16 @@ def _base_ydl_opts() -> dict:
             with os.fdopen(fd, "w") as f:
                 f.write(settings.yt_dlp_cookies)
             _cookies_file = path
+            lines = settings.yt_dlp_cookies.splitlines()
+            logger.error(
+                "YT_DLP_COOKIES loaded: %d chars, %d lines, first line: %r",
+                len(settings.yt_dlp_cookies),
+                len(lines),
+                lines[0] if lines else None,
+            )
+    else:
+        logger.error("YT_DLP_COOKIES is not set")
+    if _cookies_file:
         opts["cookiefile"] = _cookies_file
     return opts
 
