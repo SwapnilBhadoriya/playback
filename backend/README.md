@@ -107,3 +107,10 @@ tests/                 # pytest unit tests
   4. Redeploy. `app/services/youtube.py` writes it to a temp file and passes it to `yt-dlp` as `cookiefile` automatically once the env var is set.
   
   Cookies from a real session can eventually expire/rotate — if the error comes back after working for a while, re-export and update the env var.
+
+  Also already applied regardless of cookies: `_base_ydl_opts()` in `app/services/youtube.py` forces the `tv_embedded` player client, which returns the same full audio-only format catalog as the default client (confirmed live — no quality/size regression) but uses a different auth context that's sometimes not subject to the same bot-check as the "web" client.
+
+  **If cookies + `tv_embedded` still aren't enough** (confirmed on Railway: cookies reached the process intact and correctly formatted, but YouTube still rejected the request), the next layer is a PO (proof-of-origin) token:
+  1. Deploy [`brainicism/bgutil-ytdlp-pot-provider`](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) as its own service (it's a prebuilt Docker image, deployable directly — e.g. on Railway: "New" → "Empty Service" → set the Docker image, no repo needed) exposing port `4416`.
+  2. Set `POT_PROVIDER_BASE_URL` on both the web and worker services to that provider's internal URL (e.g. `http://<service-name>.railway.internal:4416` on Railway), and redeploy both.
+  3. `app/services/youtube.py` passes it to `yt-dlp` via the `youtubepot-bgutilhttp` extractor arg automatically once the env var is set — confirmed locally that `yt-dlp` recognizes the plugin and provider (`bgutil:http` shows as an available PO Token Provider in verbose output) and the full pipeline still runs correctly with it configured. Whether it actually defeats a given host's specific block can only be confirmed by deploying it there, since a non-blocked environment never needs to request a token in the first place.

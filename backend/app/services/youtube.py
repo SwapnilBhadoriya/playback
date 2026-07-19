@@ -31,10 +31,18 @@ def _base_ydl_opts() -> dict:
     "tv_embedded" is different -- confirmed live it returns the *same* full audio-only format
     catalog as the default client (no degradation), and is a distinct auth context (built for
     embedded TV apps) that's sometimes not subject to the same bot-check as the "web" client.
-    Combined with cookies as a second layer in case tv_embedded alone isn't enough either.
+
+    Cookies alone weren't sufficient on Railway either (confirmed reaching the process intact,
+    still blocked), so the next layer is a PO (proof-of-origin) token, supplied by a separate
+    bgutil-ytdlp-pot-provider server (optional POT_PROVIDER_BASE_URL env var) -- see
+    https://github.com/Brainicism/bgutil-ytdlp-pot-provider. All three layers are combined
+    since they're independent and don't conflict.
     """
     global _cookies_file
-    opts = {"extractor_args": {"youtube": {"player_client": ["tv_embedded"]}}}
+    extractor_args = {"youtube": {"player_client": ["tv_embedded"]}}
+    if settings.pot_provider_base_url:
+        extractor_args["youtubepot-bgutilhttp"] = {"base_url": [settings.pot_provider_base_url]}
+    opts = {"extractor_args": extractor_args}
     if settings.yt_dlp_cookies:
         if _cookies_file is None:
             fd, path = tempfile.mkstemp(prefix="yt_cookies_", suffix=".txt")
